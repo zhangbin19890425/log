@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context" 
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:aop="http://www.springframework.org/schema/aop" 
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/aop 
+						http://www.springframework.org/schema/aop/spring-aop.xsd
+						http://www.springframework.org/schema/mvc 
+						http://www.springframework.org/schema/mvc/spring-mvc.xsd
+						http://www.springframework.org/schema/beans 
+						http://www.springframework.org/schema/beans/spring-beans.xsd
+						http://www.springframework.org/schema/util 
+						http://www.springframework.org/schema/util/spring-util.xsd
+						http://www.springframework.org/schema/context 
+						http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<!-- 当在web.xml 中 DispatcherServlet使用 <url-pattern>/</url-pattern> 映射时，能映射静态资源 -->
+
+	<aop:aspectj-autoproxy proxy-target-class="true" />
+	
+	<!-- 
+	<bean class="cn.sh.ideal.servlet.aspect.JsonDataAspect" p:debug="true" />
+	 -->
+	<!--
+	<bean class="cn.sh.ideal.servlet.context.ServletAppContext"/>
+	-->
+	<context:component-scan base-package="cn.sh.ideal.**.controller" />
+	
+	<!-- 
+	<mvc:interceptors>
+		<bean class="cn.sh.ideal.servlet.interceptor.CharsetHandleInterceptor">
+			<property name="configLocation" value="classpath:common.properties"/>
+		</bean>
+		<bean class="cn.sh.ideal.servlet.interceptor.FilterHandleInterceptor" />
+		<bean class="cn.sh.ideal.servlet.interceptor.BasePathInterceptor" p:basePathName="BASE_PATH" />
+		<mvc:interceptor>
+			<mvc:mapping path="/**"/>
+			<mvc:exclude-mapping path="/user/**"/>
+			<bean class="cn.sh.ideal.system.interceptor.DataAccessInterceptor"/>
+		</mvc:interceptor>
+		
+	</mvc:interceptors>
+	 -->
+	 
+	<mvc:default-servlet-handler />
+	<!-- 静态资源映射 -->
+	<mvc:resources mapping="/assets/**" location="/WEB-INF/assets/" />
+	<mvc:resources mapping="/images/**" location="/WEB-INF/images/" />
+	<mvc:resources mapping="/css/**" location="/WEB-INF/css/" />
+	<mvc:resources mapping="/js/**" location="/WEB-INF/js/" />
+	
+	 
+	<!-- Enables the Spring MVC @Controller programming model -->
+	<bean id="conversionService" class="org.springframework.format.support.FormattingConversionServiceFactoryBean" />
+	<mvc:annotation-driven content-negotiation-manager="cnManager" conversion-service="conversionService">
+		<!-- FastJson Argument Resolver -->
+		<mvc:argument-resolvers>
+       		<bean class="cn.sh.ideal.servlet.resolver.FastJsonArgumentResolver"/>
+    	</mvc:argument-resolvers>
+    	
+    	<!-- Message Converter -->
+		<mvc:message-converters register-defaults="true">
+		    <!-- fastjosn spring support -->
+			<bean class="cn.sh.ideal.servlet.converter.FastJsonpHttpMessageConverter">
+				<property name="supportedMediaTypes">
+					<list>
+						<value>text/html;charset=UTF-8</value>
+						<value>application/json</value>
+					</list>
+				</property>
+				<property name="features">
+					<list>
+						<value>WriteMapNullValue</value>
+						<value>QuoteFieldNames</value>
+						<value>UseISO8601DateFormat</value>
+					</list>
+				</property>
+			</bean>
+		</mvc:message-converters>
+	</mvc:annotation-driven>
+	
+	<bean id="cnManager" class="org.springframework.web.accept.ContentNegotiationManagerFactoryBean">
+		<property name="ignoreAcceptHeader" value="true" />
+		<property name="favorPathExtension" value="true" />
+		<property name="defaultContentType" value="text/html" />
+		<property name="favorParameter" value="true" />
+		<property name="mediaTypes">
+			<map>
+				<entry key="xml" value="application/xml" />
+				<entry key="json" value="text/plain" />
+				<entry key="xls" value="application/vnd.ms-excel" />
+			</map>
+		</property>
+	</bean>
+
+	<!--Basic application beans. -->
+	<bean id="viewResolver" class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
+		<!-- 支持反转 -->
+		<property name="contentNegotiationManager" ref="cnManager" />
+		<property name="viewResolvers">
+			<list>
+				<bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+					<property name="prefix" value="/WEB-INF/jsp/" />
+					<property name="suffix" value=".jsp" />
+				</bean>
+			</list>
+		</property>
+
+		<!--json 视图解析器 -->
+		<property name="defaultViews">
+			<list>
+				<bean class="com.alibaba.fastjson.support.spring.FastJsonJsonView">
+					<property name="contentType" value="text/plain" />
+				</bean>
+			</list>
+		</property>
+	</bean>
+	
+	<!-- 支持上传文件 -->
+	<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+		<property name="defaultEncoding" value="UTF-8" />
+		<property name="maxUploadSize" value="#{1024L*1024*1024*100}" />
+	</bean>
+</beans>
